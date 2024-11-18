@@ -3,6 +3,7 @@
 import { ChangeEvent, useState, FormEvent } from "react";
 import { messageSchema } from "@/schemas/message.schema";
 import { ValidationError } from "yup"; // Assuming you are using 'yup' for schema validation
+import AutoAlert from "@/components/alert";
 
 interface Idata {
   username: string;
@@ -26,6 +27,16 @@ export default function Home() {
     phonenumber: "",
     message: ""
   });
+
+  const [alertVisible, setAlertVisible] = useState(false);
+
+  const handleShowAlert = () => {
+    setAlertVisible(true);
+  };
+
+  const handleCloseAlert = () => {
+    setAlertVisible(false);
+  };
 
   // Handle change for individual inputs and perform validation on that field
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -52,8 +63,18 @@ export default function Home() {
       // Validate the entire form at once
       await messageSchema.validate(data, { abortEarly: false });
 
-      // If validation passes, proceed with form submission
-      console.log("Form submitted successfully:", data);
+      //If validation passes, proceed with form submission
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if(res.ok){
+        handleShowAlert();
+      }
       // You can send the data to an API here, or perform other actions
     } catch (error) {
       // Type the error as ValidationError to access 'inner' array and other properties
@@ -70,6 +91,13 @@ export default function Home() {
   };
 
   return (
+    <>
+    {alertVisible && (
+        <AutoAlert
+          duration={3000} // Alert will close after 3 seconds
+          onClose={handleCloseAlert}
+        />
+      )}
     <div className="flex justify-center items-center w-screen h-screen">
       <form onSubmit={handleSubmit}>
         <label htmlFor="username">Username</label>
@@ -122,5 +150,6 @@ export default function Home() {
         <button type="submit" className="p-4 bg-yellow-300">Send</button>
       </form>
     </div>
+    </>   
   );
 }
